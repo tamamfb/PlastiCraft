@@ -1,23 +1,46 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (form.password !== form.confirmPassword) {
+      alert('Password dan Konfirmasi Password tidak cocok');
+      return;
+    }
+
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      }),
     });
+
     const data = await res.json();
-    alert(data.message || data.error);
+
+    if (res.ok) {
+      router.push('/login?success=1');
+    } else {
+      alert(data.error);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 relative">
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm space-y-6"
@@ -25,12 +48,12 @@ export default function RegisterPage() {
         <h1 className="text-2xl font-bold text-center text-gray-800">Register</h1>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
           <input
             type="text"
             placeholder="Name"
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+            className="text-black w-full px-4 py-2 border border-gray-300 rounded-md"
             required
           />
         </div>
@@ -41,7 +64,7 @@ export default function RegisterPage() {
             type="email"
             placeholder="Email"
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+            className="text-black w-full px-4 py-2 border border-gray-300 rounded-md"
             required
           />
         </div>
@@ -52,20 +75,32 @@ export default function RegisterPage() {
             type="password"
             placeholder="Password"
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+            className="text-black w-full px-4 py-2 border border-gray-300 rounded-md"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+            className="text-black w-full px-4 py-2 border border-gray-300 rounded-md"
             required
           />
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+          className="w-full bg-[#3EB59D] text-white py-2 rounded-md hover:bg-[#8BD0C2] transition cursor-pointer"
         >
           Register
         </button>
 
         <p className="text-center text-sm text-gray-500">
-          Sudah punya akun? <a href="/login" className="text-blue-600 hover:underline">Login</a>
+          Sudah punya akun?{' '}
+          <a href="/login" className="text-[#3EB59D] hover:underline">Login</a>
         </p>
       </form>
     </div>

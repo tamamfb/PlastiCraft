@@ -1,9 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
+  const [showSuccess, setShowSuccess] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('success') === '1') {
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +27,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 relative">
+      {showSuccess && (
+        <div className="absolute top-5 right-5 bg-green-500 text-white px-4 py-2 rounded shadow-md animate-bounce">
+          Registrasi berhasil! Silakan login.
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm space-y-6"
@@ -30,7 +46,7 @@ export default function LoginPage() {
             type="email"
             placeholder="Email"
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+            className="text-black w-full px-4 py-2 border border-gray-300 rounded-md"
             required
           />
         </div>
@@ -41,20 +57,21 @@ export default function LoginPage() {
             type="password"
             placeholder="Password"
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
+            className="text-black w-full px-4 py-2 border border-gray-300 rounded-md"
             required
           />
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+          className="w-full bg-[#3EB59D] text-white py-2 rounded-md hover:bg-[#8BD0C2] transition cursor-pointer"
         >
           Login
         </button>
 
         <p className="text-center text-sm text-gray-500">
-          Belum punya akun? <a href="/register" className="text-blue-600 hover:underline">Register</a>
+          Belum punya akun?{' '}
+          <a href="/register" className="text-[#3EB59D] hover:underline">Register</a>
         </p>
       </form>
     </div>

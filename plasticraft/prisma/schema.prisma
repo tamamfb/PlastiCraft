@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  email    String    @unique
+  password String
+  name     String
+  foto     String?   // nullable (varchar?)
+
+  creations Creation[]
+  comments  Comment[]
+}
+
+model Creation {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  categoryProdukId  Int
+  categoryBahanId   Int
+  gambar            String
+  judul             String
+  deskripsi         String
+  langkah           String?
+  video             String?
+  tanggal           DateTime  @default(now())
+
+  user              User       @relation(fields: [userId], references: [id])
+  categoryProduk    CategoryProduk @relation(fields: [categoryProdukId], references: [id])
+  categoryBahan     CategoryBahan  @relation(fields: [categoryBahanId], references: [id])
+  comments          Comment[]
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  creationId  Int
+  komen       String
+  tanggal     DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+  creation    Creation @relation(fields: [creationId], references: [id])
+}
+
+model CategoryProduk {
+  id      Int        @id @default(autoincrement())
+  nama    String
+
+  creations Creation[]
+}
+
+model CategoryBahan {
+  id      Int        @id @default(autoincrement())
+  nama    String
+
+  creations Creation[]
+}

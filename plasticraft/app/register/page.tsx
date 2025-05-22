@@ -10,13 +10,19 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
   });
+  const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
+
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setTimeout(() => setErrorMessage(''), 3000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (form.password !== form.confirmPassword) {
-      alert('Password dan Konfirmasi Password tidak cocok');
+      showError('Password dan Konfirmasi Password tidak sama');
       return;
     }
 
@@ -35,12 +41,18 @@ export default function RegisterPage() {
     if (res.ok) {
       router.push('/login?success=1');
     } else {
-      alert(data.error);
+      showError(data.error || 'Terjadi kesalahan saat registrasi');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 relative">
+      {errorMessage && (
+        <div className="absolute top-5 right-5 bg-red-500 text-white px-4 py-2 rounded shadow-md animate-bounce">
+          {errorMessage}
+        </div>
+      )}
+
       <form
         onSubmit={handleSubmit}
         className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm space-y-6"

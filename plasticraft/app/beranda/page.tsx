@@ -12,8 +12,12 @@ export default function beranda() {
         <div className="absolute inset-0 bg-black/70"></div>
 
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center text-white px-4">
-          <h1 className="text-4xl font-semibold mb-2">Kreasikan Sampah Plastikmu</h1>
-          <p className="text-lg mb-8">Hijaukan Bumi, kurangi sampah plastik</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold mb-2">
+            Kreasikan Sampah Plastikmu
+          </h1>
+          <p className="text-sm sm:text-base md:text-lg mb-8">
+            Hijaukan Bumi, kurangi sampah plastik
+          </p>
           <button className="bg-[#FAF7EF] hover:text-[#34a18a] text-black font-bold min-w-[160px] py-2 rounded-full text-2xl transition cursor-pointer">
             MULAI
           </button>

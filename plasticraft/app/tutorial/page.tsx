@@ -21,7 +21,7 @@ export default function TutorialPage() {
           {/* Filter Button */}
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className="flex items-center gap-1 px-3 py-2 rounded-full bg-[#1B7865] text-white text-sm font-medium"
+            className="flex items-center gap-1 px-3 py-2 rounded-full bg-[#1B7865] text-white text-sm font-medium cursor-pointer hover:bg-[#1B7865]/90 transition"
           >
             <Filter size={16} />
           </button>
@@ -83,7 +83,7 @@ export default function TutorialPage() {
                 <h2 className="font-bold text-sm">Nama Karya</h2>
                 <p className="text-xs text-gray-600">Ringkasan Deskripsi</p>
                 <Link href="/tutorial-detail">
-                  <button className="mt-2 bg-[#1B7865] text-white text-xs px-3 py-1 rounded-full">
+                  <button className="mt-2 bg-[#1B7865] text-white text-xs px-3 py-1 rounded-full cursor-pointer hover:bg-[#1B7865]/90 transition">
                     Tutorial →
                   </button>
                 </Link>

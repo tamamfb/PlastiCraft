@@ -12,8 +12,9 @@ export default function BagikanPage() {
 
   // State untuk form
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState(''); // Deskripsi untuk tutorial & karya
+  const [materialCategory, setMaterialCategory] = useState(''); // Mengganti nama 'category' agar lebih jelas
+  const [productCategory, setProductCategory] = useState(''); // State BARU untuk kategori produk
+  const [description, setDescription] = useState('');
 
   // State untuk file gambar utama
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -112,21 +113,42 @@ export default function BagikanPage() {
         {/* Bagian Form */}
         <div className="space-y-6">
           {/* Field Umum */}
+          {/* Dropdown Kategori Bahan */}
           <div className="relative">
-             <label htmlFor="category" className="text-gray-800 font-semibold">Kategori Bahan</label>
-             <select id="category" name="category" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none">
+             <label htmlFor="material-category" className="text-gray-800 font-semibold">Kategori Bahan</label>
+             <select id="material-category" name="material-category" value={materialCategory} onChange={(e) => setMaterialCategory(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none">
                <option value="" disabled>Pilih kategori bahan</option>
-               <option value="plastik">Plastik</option><option value="kertas">Kertas</option><option value="kaca">Kaca</option><option value="logam">Logam</option><option value="kain">Kain</option>
+               <option value="plastik">Plastik</option>
+               <option value="kertas">Kertas</option>
+               <option value="kaca">Kaca</option>
+               <option value="logam">Logam</option>
+               <option value="kain">Kain</option>
              </select>
              <div className="pointer-events-none absolute inset-y-0 right-0 top-6 flex items-center px-2 text-gray-700"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
           </div>
+
+          {/* Dropdown Kategori Produk (BARU) */}
+          <div className="relative">
+             <label htmlFor="product-category" className="text-gray-800 font-semibold">Kategori Produk</label>
+             <select id="product-category" name="product-category" value={productCategory} onChange={(e) => setProductCategory(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none">
+               <option value="" disabled>Pilih kategori produk</option>
+               <option value="dekorasi">Dekorasi Rumah</option>
+               <option value="fashion">Aksesoris Fashion</option>
+               <option value="peralatan">Peralatan Rumah Tangga</option>
+               <option value="mainan">Mainan</option>
+               <option value="seni">Seni & Kerajinan</option>
+               <option value="lainnya">Lainnya</option>
+             </select>
+             <div className="pointer-events-none absolute inset-y-0 right-0 top-6 flex items-center px-2 text-gray-700"><svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
+          </div>
+
           <div>
             <label htmlFor="title" className="text-gray-800 font-semibold">Judul</label>
             <input type="text" name="title" id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-transparent border-b-2 border-gray-200 focus:border-[#1B8380] py-2 text-gray-700 outline-none transition-colors" placeholder="Tulis judul karyamu di sini"/>
           </div>
           <div>
             <label htmlFor="description" className="text-gray-800 font-semibold">Deskripsi</label>
-            <textarea name="description" id="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-transparent border-b-2 border-gray-200 focus:border-[#1B8380] py-2 text-gray-700 outline-none transition-colors" placeholder="Tambahkan deskripsi singkat di sini"></textarea>
+            <textarea name="description" id="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-transparent border-b-2 border-gray-200 focus:border-[#1B8380] py-2 text-gray-700 outline-none transition-colors" placeholder="Jelaskan secara singkat tentang karyamu"></textarea>
           </div>
 
           {/* Render Form Khusus Tutorial */}

@@ -30,8 +30,12 @@ export default async function handler(
         foto: true,
         _count: {
           select: {
-            creations: true,
-            bookmarks: true,
+            // HANYA HITUNG KREASI YANG TIPENYA KARYA
+            creations: {
+              where: { type: 'KARYA' }
+            },
+            // Biarkan hitungan bookmark apa adanya, atau filter juga jika perlu
+            bookmarks: true, 
           },
         },
       },

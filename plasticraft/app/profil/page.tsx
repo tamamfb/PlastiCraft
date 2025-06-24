@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Edit, Grid, Heart, MessageCircle, Bookmark, MoreHorizontal, Settings, Share, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Edit, Grid, Heart, Bookmark, Share, Loader2, LogOut, AlertTriangle } from 'lucide-react';
 import BottomNavbar from '@/app/components/BottomNavbar';
 
-// Tipe data disesuaikan dengan skema baru
 interface UserProfile {
   id: number;
   name: string;
@@ -67,7 +67,6 @@ const EditProfileModal = ({ user, onClose, onUpdateSuccess }: { user: UserProfil
   };
 
   return (
-    // PERBAIKAN 1: Opasitas dikurangi, blur ditingkatkan
     <div className="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-md p-6 transform transition-all">
         <div className="flex justify-between items-center mb-6">
@@ -102,9 +101,37 @@ const EditProfileModal = ({ user, onClose, onUpdateSuccess }: { user: UserProfil
   );
 };
 
+const LogoutConfirmationModal = ({ onConfirm, onCancel, isLoggingOut }: { onConfirm: () => void, onCancel: () => void, isLoggingOut: boolean }) => {
+    return (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl w-full max-w-sm p-6 text-center transform transition-all shadow-xl">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                    <AlertTriangle className="h-6 w-6 text-red-600" aria-hidden="true" />
+                </div>
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Konfirmasi Keluar</h3>
+                <div className="mt-2">
+                    <p className="text-sm text-gray-500">Apakah Anda yakin ingin keluar dari akun Anda?</p>
+                </div>
+                <div className="mt-6 flex space-x-3">
+                    <button onClick={onCancel} disabled={isLoggingOut} className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer">
+                        Batal
+                    </button>
+                    <button onClick={onConfirm} disabled={isLoggingOut} className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center cursor-pointer">
+                        {isLoggingOut ? <Loader2 className="animate-spin" /> : 'Ya, Keluar'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const ProfilePage = () => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('posts');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -136,7 +163,11 @@ const ProfilePage = () => {
       setBookmarkedPosts(bookmarksData);
 
     } catch (err: any) {
-      setError(err.message);
+      if (err.message === 'Gagal memuat data pengguna') {
+         router.push('/login');
+      } else {
+         setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -153,13 +184,27 @@ const ProfilePage = () => {
     });
     setCacheKey(Date.now());
   };
+  
+  const handleLogout = async () => {
+      setIsLoggingOut(true);
+      try {
+          const response = await fetch('/api/auth/logout', { method: 'POST' });
+          if (!response.ok) {
+              throw new Error('Logout failed');
+          }
+          router.push('/login');
+      } catch (error) {
+          console.error(error);
+          alert('Gagal untuk keluar, silakan coba lagi.');
+          setIsLoggingOut(false);
+      }
+  };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (loading) return <div className="flex items-center justify-center min-h-screen bg-gray-50"><Loader2 className="w-10 h-10 text-[#3EB59D] animate-spin" /></div>;
   if (error) return <div className="flex items-center justify-center min-h-screen text-red-500">{error}</div>;
   if (!user) return <div className="flex items-center justify-center min-h-screen">User tidak ditemukan.</div>;
 
   const PostDetailModal = ({ post }: { post: Post }) => (
-    // PERBAIKAN 1: Opasitas dikurangi, blur ditingkatkan
     <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
         <div className="flex-1 bg-black flex items-center justify-center">
@@ -216,10 +261,10 @@ const ProfilePage = () => {
           {activeTab === 'posts' ? <Grid size={24} className="text-white md:w-8 md:h-8" /> : <Bookmark size={24} className="text-white md:w-8 md:h-8" />}
         </div>
         <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-2">
-          {activeTab === 'posts' ? 'Belum Ada Postingan' : 'Belum Ada Bookmark'}
+          {activeTab === 'posts' ? 'Belum Ada Postingan' : 'Anda belum menyimpan kreasi apa pun.'}
         </h3>
         <p className="text-gray-500 max-w-md mx-auto leading-relaxed text-sm md:text-base px-4 md:px-0">
-          {activeTab === 'posts' ? 'Anda belum membagikan kreasi apa pun.' : 'Anda belum menyimpan kreasi apa pun.'}
+          {activeTab === 'posts' ? 'Anda belum membagikan kreasi apa pun.' : 'Semua kreasi yang Anda simpan akan muncul di sini.'}
         </p>
       </div>
     )
@@ -229,6 +274,13 @@ const ProfilePage = () => {
     <div className="min-h-screen bg-gray-50 pb-16">
       {showEditModal && <EditProfileModal user={user} onClose={() => setShowEditModal(false)} onUpdateSuccess={handleUpdateSuccess} />}
       {selectedPost && <PostDetailModal post={selectedPost} />}
+      {showLogoutModal && (
+          <LogoutConfirmationModal 
+              onConfirm={handleLogout} 
+              onCancel={() => setShowLogoutModal(false)} 
+              isLoggingOut={isLoggingOut} 
+          />
+      )}
       
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -245,13 +297,18 @@ const ProfilePage = () => {
                 <div className="font-bold text-xl md:text-2xl text-gray-800">{user._count.creations}</div>
                 <div className="text-gray-500 text-sm md:text-base">postingan</div>
             </div>
-            <button onClick={() => setShowEditModal(true)} className="bg-[#3EB59D] text-white px-8 py-2 rounded-lg hover:bg-[#2a9d87] transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm md:text-base w-full max-w-xs mx-auto cursor-pointer">
-                Edit Profil
-            </button>
+            <div className="w-full max-w-xs mx-auto flex flex-col items-center space-y-3">
+              <button onClick={() => setShowEditModal(true)} className="bg-[#3EB59D] text-white px-8 py-2 rounded-lg hover:bg-[#2a9d87] transition-all duration-300 transform hover:scale-105 text-sm md:text-base w-full cursor-pointer">
+                  Edit Profil
+              </button>
+              <button onClick={() => setShowLogoutModal(true)} className="flex items-center justify-center space-x-2 bg-rose-50 text-rose-500 px-8 py-2 rounded-lg hover:bg-rose-100 hover:text-rose-600 transition-all duration-300 transform hover:scale-105 text-sm md:text-base w-full cursor-pointer border border-rose-200">
+                  <LogOut size={16} />
+                  <span>Keluar</span>
+              </button>
+            </div>
         </div>
         <div className="bg-white rounded-t-2xl shadow-sm border border-gray-100">
           
-          {/* PERBAIKAN 2: Wrapper untuk tab dan garis animasi */}
           <div className="relative border-b border-gray-200">
             <div className="flex">
                 <button onClick={() => setActiveTab('posts')} className={`flex-1 flex justify-center items-center space-x-2 py-4 font-medium transition-colors duration-300 cursor-pointer ${activeTab === 'posts' ? 'text-[#3EB59D]' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -263,7 +320,6 @@ const ProfilePage = () => {
                     <span className="text-sm md:text-base">BOOKMARK</span>
                 </button>
             </div>
-            {/* Div untuk garis animasi */}
             <div
               className={`absolute bottom-0 h-[2px] bg-[#3EB59D] w-1/2 transition-transform duration-300 ease-in-out ${
                 activeTab === 'posts' ? 'translate-x-0' : 'translate-x-full'

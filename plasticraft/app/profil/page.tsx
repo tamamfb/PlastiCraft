@@ -219,7 +219,7 @@ const ProfilePage = () => {
           {activeTab === 'posts' ? 'Belum Ada Postingan' : 'Belum Ada Bookmark'}
         </h3>
         <p className="text-gray-500 max-w-md mx-auto leading-relaxed text-sm md:text-base px-4 md:px-0">
-          {activeTab === 'posts' ? 'Anda belum membagikan kreasi apa pun.' : 'Anda belum menyimpan bookmark apa pun.'}
+          {activeTab === 'posts' ? 'Anda belum membagikan kreasi apa pun.' : 'Anda belum menyimpan kreasi apa pun.'}
         </p>
       </div>
     )

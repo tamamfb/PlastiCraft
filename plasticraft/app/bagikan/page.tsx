@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNavbar from '@/app/components/BottomNavbar';
-import { CloudArrowUpIcon, XCircleIcon, PlusCircleIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, XCircleIcon, PlusCircleIcon, VideoCameraIcon, CheckCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { Loader2 } from 'lucide-react';
 
 interface UserSession {
@@ -12,11 +12,75 @@ interface UserSession {
   role: 'ADMIN' | 'USER';
 }
 
+// Komponen Popup/Modal baru yang serbaguna
+const StatusPopup = ({
+  type,
+  message,
+  onClose,
+}: {
+  type: 'success' | 'error' | 'info';
+  message: string;
+  onClose: () => void;
+}) => {
+  const
+ 
+iconContainerClass = {
+    success: 'bg-green-100',
+    error: 'bg-red-100',
+    info: 'bg-blue-100',
+  }[type];
+
+  const iconClass = {
+    success: 'text-green-600',
+    error: 'text-red-600',
+    info: 'text-blue-600',
+  }[type];
+
+  const buttonClass = {
+    success: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+    error: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    info: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+  }[type];
+
+  const IconComponent = {
+    success: CheckCircleIcon,
+    error: XCircleIcon,
+    info: InformationCircleIcon,
+  }[type];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" aria-modal="true" role="dialog">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 text-center shadow-xl transform transition-all">
+        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconContainerClass}`}>
+          <IconComponent className={`h-8 w-8 ${iconClass}`} />
+        </div>
+        <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">
+          {type === 'success' ? 'Berhasil' : type === 'error' ? 'Terjadi Kesalahan' : 'Informasi'}
+        </h3>
+        <div className="mt-2">
+          <p className="text-sm text-gray-500">{message}</p>
+        </div>
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white ${buttonClass} focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm`}
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 export default function BagikanPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // --- State untuk Form ---
   const [uploadType, setUploadType] = useState('tutorial');
   const [title, setTitle] = useState('');
   const [categoryBahan, setCategoryBahan] = useState('');
@@ -28,16 +92,22 @@ export default function BagikanPage() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [alatBahan, setAlatBahan] = useState<string[]>(['']);
   const [steps, setSteps] = useState<string[]>(['']);
-  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // --- State untuk Popup/Modal ---
+  const [popup, setPopup] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'info';
+    message: string;
+    onCloseAction?: () => void;
+  }>({ isOpen: false, type: 'info', message: '' });
+
+  
   useEffect(() => {
     const fetchUserSession = async () => {
       try {
         const response = await fetch('/api/user/me');
-        if (!response.ok) {
-          throw new Error('Sesi tidak ditemukan');
-        }
+        if (!response.ok) throw new Error('Sesi tidak ditemukan');
         const sessionData: UserSession = await response.json();
         setUser(sessionData);
         if (sessionData.role === 'USER') {
@@ -52,6 +122,7 @@ export default function BagikanPage() {
     fetchUserSession();
   }, [router]);
 
+  // --- Semua handler (handleImageChange, dll) tetap sama ---
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const selectedFile = event.target.files[0];
@@ -100,10 +171,11 @@ export default function BagikanPage() {
   const alatBahanHandlers = createDynamicInputHandler(alatBahan, setAlatBahan);
   const stepHandlers = createDynamicInputHandler(steps, setSteps);
 
+  // --- Fungsi handleSubmit yang diperbarui ---
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!imageFile || !title || !categoryBahan || !categoryProduk) {
-        alert('Mohon lengkapi semua field yang wajib diisi.');
+        setPopup({ isOpen: true, type: 'info', message: 'Mohon lengkapi semua field yang wajib diisi.' });
         return;
     }
     
@@ -136,17 +208,28 @@ export default function BagikanPage() {
             throw new Error(errorData.error || 'Gagal mengunggah kreasi');
         }
         
-        alert('Unggah berhasil!');
-        router.push('/beranda');
+        setPopup({
+            isOpen: true,
+            type: 'success',
+            message: 'Kreasi Anda berhasil diunggah!',
+            onCloseAction: () => router.push('/beranda'),
+        });
 
     } catch (error: any) {
         console.error('Error submitting:', error);
-        alert(`Terjadi kesalahan: ${error.message}`);
+        setPopup({ isOpen: true, type: 'error', message: error.message });
     } finally {
         setIsSubmitting(false);
     }
   };
 
+  const closePopup = () => {
+    if (popup.onCloseAction) {
+      popup.onCloseAction();
+    }
+    setPopup({ isOpen: false, type: 'info', message: '' });
+  };
+  
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 text-[#1B8380] animate-spin" /></div>;
   }
@@ -154,6 +237,7 @@ export default function BagikanPage() {
   const activeTabClass = "bg-[#1B8380] text-white font-semibold py-3 px-10 rounded-full shadow-md cursor-pointer";
   const inactiveTabClass = "bg-white text-gray-700 font-semibold py-3 px-10 rounded-full border border-gray-300 cursor-pointer";
 
+  // --- Render function untuk form tetap sama ---
   const renderKaryaForm = () => (
     <div className='space-y-6'>
       <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center mb-6">
@@ -174,14 +258,14 @@ export default function BagikanPage() {
         <label htmlFor="categoryBahan-karya" className="text-gray-800 font-semibold">Kategori Bahan</label>
         <select id="categoryBahan-karya" value={categoryBahan} onChange={(e) => setCategoryBahan(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none" required>
           <option value="" disabled>Pilih kategori bahan</option>
-          <option value="1">Plastik</option><option value="2">Kertas</option>
+          <option value="1">Plastik</option><option value="2">Kertas</option><option value="3">Logam</option><option value="4">Kain</option>
         </select>
       </div>
       <div className="relative">
         <label htmlFor="categoryProduk-karya" className="text-gray-800 font-semibold">Kategori Produk</label>
         <select id="categoryProduk-karya" value={categoryProduk} onChange={(e) => setCategoryProduk(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none" required>
           <option value="" disabled>Pilih kategori produk</option>
-          <option value="1">Dekorasi</option><option value="2">Fashion</option>
+          <option value="1">Dekorasi</option><option value="2">Aksesoris</option><option value="3">Mainan</option><option value="4">Peralatan Rumah Tangga</option>
         </select>
       </div>
       <div>
@@ -215,14 +299,14 @@ export default function BagikanPage() {
         <label htmlFor="categoryBahan-tutorial" className="text-gray-800 font-semibold">Kategori Bahan</label>
         <select id="categoryBahan-tutorial" value={categoryBahan} onChange={(e) => setCategoryBahan(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none" required>
           <option value="" disabled>Pilih kategori bahan</option>
-          <option value="1">Plastik</option><option value="2">Kertas</option>
+          <option value="1">Plastik</option><option value="2">Kertas</option><option value="3">Logam</option><option value="4">Kain</option>
         </select>
       </div>
       <div className="relative">
         <label htmlFor="categoryProduk-tutorial" className="text-gray-800 font-semibold">Kategori Produk</label>
         <select id="categoryProduk-tutorial" value={categoryProduk} onChange={(e) => setCategoryProduk(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none" required>
           <option value="" disabled>Pilih kategori produk</option>
-          <option value="1">Dekorasi</option><option value="2">Fashion</option>
+          <option value="1">Dekorasi</option><option value="2">Aksesoris</option><option value="3">Mainan</option><option value="4">Peralatan Rumah Tangga</option>
         </select>
       </div>
        <div>
@@ -274,6 +358,8 @@ export default function BagikanPage() {
 
   return (
     <div className="bg-white min-h-screen font-sans pb-24">
+      {popup.isOpen && <StatusPopup type={popup.type} message={popup.message} onClose={closePopup} />}
+      
       <form onSubmit={handleSubmit} className="p-6">
         {user?.role === 'ADMIN' && (
           <div className="flex justify-center space-x-2 mb-6">
@@ -283,14 +369,14 @@ export default function BagikanPage() {
         )}
 
         <div className="overflow-hidden">
-            <div className={`flex transition-transform duration-500 ease-in-out ${user?.role === 'ADMIN' && uploadType === 'karya' ? '-translate-x-full' : 'translate-x-0'}`}>
-                <div className="w-full flex-shrink-0 pr-4">
-                    {user?.role === 'ADMIN' ? renderTutorialForm() : renderKaryaForm()}
-                </div>
-                <div className="w-full flex-shrink-0 pl-4">
-                    {renderKaryaForm()}
-                </div>
+          <div className={`flex transition-transform duration-500 ease-in-out ${user?.role === 'ADMIN' && uploadType === 'karya' ? '-translate-x-full' : 'translate-x-0'}`}>
+            <div className="w-full flex-shrink-0 pr-2">
+              {user?.role === 'ADMIN' ? renderTutorialForm() : renderKaryaForm()}
             </div>
+            <div className="w-full flex-shrink-0 pl-2">
+              {renderKaryaForm()}
+            </div>
+          </div>
         </div>
 
         <div className="px-0 pt-8">

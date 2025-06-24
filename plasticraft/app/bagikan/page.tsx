@@ -121,7 +121,7 @@ export default function BagikanPage() {
       <div className="px-6 mt-8">
         <button
             type="button"
-            className="w-full bg-[#1B8380] text-white font-bold py-4 rounded-full text-lg shadow-lg hover:bg-[#166966] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B8380]"
+            className="w-full bg-[#1B7865] text-white font-bold py-4 rounded-full text-lg shadow-lg hover:bg-[#166966] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1B8380]"
         >
             Unggah
         </button>

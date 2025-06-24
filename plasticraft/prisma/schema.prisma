@@ -13,12 +13,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CreationType {
+  KARYA
+  TUTORIAL
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String
   foto      String?
+  role      Role     @default(USER)
 
   creations Creation[]
   likes     Like[]
@@ -33,6 +44,8 @@ model Creation {
   gambar           String
   judul            String
   deskripsi        String
+  type             CreationType @default(KARYA)
+  alatBahan        String?
   langkah          String?
   video            String?
   tanggal          DateTime @default(now())
@@ -53,7 +66,6 @@ model Like {
   user     User     @relation(fields: [userId], references: [id])
   creation Creation @relation(fields: [creationId], references: [id])
 
-  // Composite unique index untuk mencegah user like postingan yang sama 2x
   @@unique([userId, creationId])
 }
 
@@ -66,19 +78,18 @@ model Bookmark {
   user     User     @relation(fields: [userId], references: [id])
   creation Creation @relation(fields: [creationId], references: [id])
 
-  // Composite unique index untuk mencegah user bookmark postingan yang sama 2x
   @@unique([userId, creationId])
 }
 
 model CategoryProduk {
-  id    Int      @id @default(autoincrement())
+  id    Int    @id @default(autoincrement())
   nama  String
 
   creations Creation[]
 }
 
 model CategoryBahan {
-  id    Int      @id @default(autoincrement())
+  id    Int    @id @default(autoincrement())
   nama  String
 
   creations Creation[]

@@ -22,7 +22,11 @@ export default async function handler(
     const userId = decoded.id;
 
     const creations = await prisma.creation.findMany({
-      where: { userId: userId },
+      // TAMBAHKAN FILTER UNTUK TIPE KARYA DI SINI
+      where: { 
+        userId: userId,
+        type: 'KARYA' 
+      },
       select: {
         id: true,
         gambar: true,

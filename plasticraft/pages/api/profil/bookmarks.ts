@@ -22,9 +22,15 @@ export default async function handler(
     const userId = decoded.id;
 
     const bookmarks = await prisma.bookmark.findMany({
-      where: { userId: userId },
+      // TAMBAHKAN FILTER BERDASARKAN TIPE KREASI YANG TERHUBUNG
+      where: { 
+        userId: userId,
+        creation: {
+          type: 'KARYA'
+        }
+      },
       select: {
-        creation: { // Ambil data 'creation' yang terkait dengan bookmark
+        creation: {
           select: {
             id: true,
             gambar: true,
@@ -42,7 +48,6 @@ export default async function handler(
       },
     });
 
-    // Ubah struktur data agar sesuai dengan tipe 'Post[]' di frontend
     const bookmarkedPosts = bookmarks.map(bookmark => bookmark.creation);
 
     return res.status(200).json(bookmarkedPosts);

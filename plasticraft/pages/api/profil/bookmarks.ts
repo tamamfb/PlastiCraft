@@ -10,15 +10,19 @@ export default async function handler(
   }
 
   try {
-    const loggedInUserId = 1; // Ganti dengan logika otentikasi Anda
+    const loggedInUserId = 1;
 
-    const creations = await prisma.creation.findMany({
+    const bookmarks = await prisma.bookmark.findMany({
       where: { userId: loggedInUserId },
       include: {
-        _count: {
-          select: {
-            likes: true,
-          },
+        creation: {
+          include: {
+            _count: {
+              select: {
+                likes: true,
+              }
+            }
+          }
         },
       },
       orderBy: {
@@ -26,7 +30,10 @@ export default async function handler(
       },
     });
 
-    return res.status(200).json(creations);
+    // Ekstrak hanya data 'creation' untuk dikirim ke frontend
+    const bookmarkedCreations = bookmarks.map(bookmark => bookmark.creation);
+
+    return res.status(200).json(bookmarkedCreations);
   } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

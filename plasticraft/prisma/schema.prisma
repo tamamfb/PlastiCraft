@@ -14,89 +14,72 @@ datasource db {
 }
 
 model User {
-  id       Int       @id @default(autoincrement())
-  email    String    @unique
-  password String
-  name     String
-  foto     String?   // nullable (varchar?)
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  foto      String?
 
   creations Creation[]
-  comments  Comment[]
   likes     Like[]
-  
-  // Following relationships
-  following Follow[] @relation("UserFollowing")
-  followers Follow[] @relation("UserFollowers")
+  bookmarks Bookmark[]
 }
 
 model Creation {
-  id                Int       @id @default(autoincrement())
-  userId            Int
-  categoryProdukId  Int
-  categoryBahanId   Int
-  gambar            String
-  judul             String
-  deskripsi         String
-  langkah           String?
-  video             String?
-  tanggal           DateTime  @default(now())
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  categoryProdukId Int
+  categoryBahanId  Int
+  gambar           String
+  judul            String
+  deskripsi        String
+  langkah          String?
+  video            String?
+  tanggal          DateTime @default(now())
 
-  user              User       @relation(fields: [userId], references: [id])
-  categoryProduk    CategoryProduk @relation(fields: [categoryProdukId], references: [id])
-  categoryBahan     CategoryBahan  @relation(fields: [categoryBahanId], references: [id])
-  comments          Comment[]
-  likes             Like[]
+  user           User           @relation(fields: [userId], references: [id])
+  categoryProduk CategoryProduk @relation(fields: [categoryProdukId], references: [id])
+  categoryBahan  CategoryBahan  @relation(fields: [categoryBahanId], references: [id])
+  likes          Like[]
+  bookmarks      Bookmark[]
 }
 
-model Comment {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  creationId  Int
-  komen       String
-  tanggal     DateTime @default(now())
-
-  user        User     @relation(fields: [userId], references: [id])
-  creation    Creation @relation(fields: [creationId], references: [id])
-}
-
-// Model untuk sistem Like
 model Like {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  creationId  Int
-  tanggal     DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  creationId Int
+  tanggal    DateTime @default(now())
 
-  user        User     @relation(fields: [userId], references: [id])
-  creation    Creation @relation(fields: [creationId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  creation Creation @relation(fields: [creationId], references: [id])
 
   // Composite unique index untuk mencegah user like postingan yang sama 2x
   @@unique([userId, creationId])
 }
 
-// Model untuk sistem Follow
-model Follow {
-  id          Int      @id @default(autoincrement())
-  followerId  Int      // User yang melakukan follow
-  followingId Int      // User yang di-follow
-  tanggal     DateTime @default(now())
+model Bookmark {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  creationId Int
+  tanggal    DateTime @default(now())
 
-  follower    User     @relation("UserFollowing", fields: [followerId], references: [id])
-  following   User     @relation("UserFollowers", fields: [followingId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  creation Creation @relation(fields: [creationId], references: [id])
 
-  // Composite unique index untuk mencegah user follow user yang sama 2x
-  @@unique([followerId, followingId])
+  // Composite unique index untuk mencegah user bookmark postingan yang sama 2x
+  @@unique([userId, creationId])
 }
 
 model CategoryProduk {
-  id      Int        @id @default(autoincrement())
-  nama    String
+  id    Int      @id @default(autoincrement())
+  nama  String
 
   creations Creation[]
 }
 
 model CategoryBahan {
-  id      Int        @id @default(autoincrement())
-  nama    String
+  id    Int      @id @default(autoincrement())
+  nama  String
 
   creations Creation[]
 }

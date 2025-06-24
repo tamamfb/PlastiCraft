@@ -1,5 +1,3 @@
-// app/tutorial/[id]/page.tsx
-
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import BottomNavbar from '@/app/components/BottomNavbar';

@@ -1,5 +1,3 @@
-// app/tutorial/page.tsx (Ini akan menjadi Server Component secara default)
-
 import prisma from '@/lib/prisma'; // Sesuaikan path jika berbeda
 import BottomNavbar from '@/app/components/BottomNavbar';
 import Link from 'next/link';

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNavbar from '@/app/components/BottomNavbar';
-import { CloudArrowUpIcon, XCircleIcon, PlusCircleIcon, VideoCameraIcon, Loader2 } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, XCircleIcon, PlusCircleIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import { Loader2 } from 'lucide-react';
 
 interface UserSession {
   id: number;

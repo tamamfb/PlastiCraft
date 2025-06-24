@@ -25,11 +25,17 @@ interface Post {
   };
 }
 
+const buildAbsoluteUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${process.env.NEXT_PUBLIC_BASE_URL || ''}${path}`;
+};
+
 const EditProfileModal = ({ user, onClose, onUpdateSuccess }: { user: UserProfile, onClose: () => void, onUpdateSuccess: (updatedUser: Partial<UserProfile>) => void }) => {
   const [editedName, setEditedName] = useState(user.name);
   const [editedEmail, setEditedEmail] = useState(user.email);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(user.foto);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(buildAbsoluteUrl(user.foto));
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,6 +131,69 @@ const LogoutConfirmationModal = ({ onConfirm, onCancel, isLoggingOut }: { onConf
     );
 };
 
+const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: Post) => void }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const url = buildAbsoluteUrl(post.gambar);
+    setImageUrl(url);
+    setImageError(false);
+    setIsLoading(true);
+  }, [post.gambar]);
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setIsLoading(false);
+  };
+
+  return (
+    <div 
+      onClick={() => onPostClick(post)} 
+      className="relative group cursor-pointer overflow-hidden rounded-sm md:rounded-xl bg-gray-200 aspect-square transition-all duration-300 hover:scale-105"
+    >
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+        </div>
+      )}
+      
+      {imageError ? (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">📷</div>
+            <p className="text-xs text-gray-500">Gambar tidak dapat dimuat</p>
+          </div>
+        </div>
+      ) : (
+        imageUrl && (
+          <img 
+            src={imageUrl} 
+            alt={post.judul} 
+            className="w-full h-full object-cover" 
+            loading="lazy"
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        )
+      )}
+      
+      <div className="absolute inset-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+        <div className="flex items-center space-x-3 md:space-x-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center space-x-1 md:space-x-2">
+            <Heart className="fill-current" size={16} />
+            <span className="font-semibold text-xs md:text-sm">{post._count.likes}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -138,7 +207,6 @@ const ProfilePage = () => {
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cacheKey, setCacheKey] = useState(Date.now());
 
   const fetchData = async () => {
     setLoading(true);
@@ -175,14 +243,14 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [router]);
 
   const handleUpdateSuccess = (updatedUserData: Partial<UserProfile>) => {
     setUser(prevUser => {
       if (!prevUser) return null;
+      fetchData(); 
       return { ...prevUser, ...updatedUserData };
     });
-    setCacheKey(Date.now());
   };
   
   const handleLogout = async () => {
@@ -204,55 +272,77 @@ const ProfilePage = () => {
   if (error) return <div className="flex items-center justify-center min-h-screen text-red-500">{error}</div>;
   if (!user) return <div className="flex items-center justify-center min-h-screen">User tidak ditemukan.</div>;
 
-  const PostDetailModal = ({ post }: { post: Post }) => (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
-        <div className="flex-1 bg-black flex items-center justify-center">
-          <img src={post.gambar} alt={post.judul} className="max-w-full max-h-full object-contain" />
-        </div>
-        <div className="w-full md:w-80 flex flex-col">
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <img src={user.foto ? `${user.foto}?key=${cacheKey}` : `https://ui-avatars.com/api/?name=${user.name}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-              <span className="font-semibold text-sm">{user.name}</span>
-            </div>
-            <button onClick={() => setSelectedPost(null)} className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer">×</button>
-          </div>
-          <div className="flex-1 p-4 overflow-y-auto">
-            <p className="text-sm text-gray-800">{post.judul}</p>
-          </div>
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-4">
-                <button className="hover:text-red-500 transition-colors cursor-pointer"><Heart size={24} /></button>
-                <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Share size={24} /></button>
+  const PostDetailModal = ({ post }: { post: Post }) => {
+    const [postImageError, setPostImageError] = useState(false);
+    const [postImageLoading, setPostImageLoading] = useState(true);
+    const postImageUrl = buildAbsoluteUrl(post.gambar);
+    const userImageUrl = buildAbsoluteUrl(user.foto);
+
+    return (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
+              <div className="flex-1 bg-black flex items-center justify-center relative">
+                {postImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
+                
+                {postImageError ? (
+                  <div className="text-white text-center">
+                    <div className="text-4xl mb-2">📷</div>
+                    <p>Gambar tidak dapat dimuat</p>
+                  </div>
+                ) : (
+                  postImageUrl && (
+                    <img 
+                      src={postImageUrl} 
+                      alt={post.judul} 
+                      className="max-w-full max-h-full object-contain"
+                      onLoad={() => setPostImageLoading(false)}
+                      onError={() => {
+                        setPostImageError(true);
+                        setPostImageLoading(false);
+                      }}
+                      style={{ display: postImageLoading ? 'none' : 'block' }}
+                    />
+                  )
+                )}
               </div>
-              <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Bookmark size={24} /></button>
-            </div>
-            <div className="text-sm">
-              <p className="font-semibold mb-1">{post._count.likes} suka</p>
-            </div>
+              <div className="w-full md:w-80 flex flex-col">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                  <img src={userImageUrl || `https://ui-avatars.com/api/?name=${user.name}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                  <span className="font-semibold text-sm">{user.name}</span>
+                  </div>
+                  <button onClick={() => setSelectedPost(null)} className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer">×</button>
+              </div>
+              <div className="flex-1 p-4 overflow-y-auto">
+                  <p className="text-sm text-gray-800">{post.judul}</p>
+              </div>
+              <div className="p-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-4">
+                      <button className="hover:text-red-500 transition-colors cursor-pointer"><Heart size={24} /></button>
+                      <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Share size={24} /></button>
+                  </div>
+                  <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Bookmark size={24} /></button>
+                  </div>
+                  <div className="text-sm">
+                  <p className="font-semibold mb-1">{post._count.likes} suka</p>
+                  </div>
+              </div>
+              </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
+    );
+  }
   
   const PostGrid = ({ postsToDisplay }: { postsToDisplay: Post[] }) => (
     postsToDisplay.length > 0 ? (
       <div className="grid grid-cols-3 gap-1 md:gap-6">
         {postsToDisplay.map((post) => (
-          <div key={post.id} onClick={() => setSelectedPost(post)} className="relative group cursor-pointer overflow-hidden rounded-sm md:rounded-xl bg-gray-100 aspect-square hover:scale-105 transition-all duration-300 shadow-sm md:shadow-md hover:shadow-xl">
-            <img src={post.gambar} alt={post.judul} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
-              <div className="flex items-center space-x-3 md:space-x-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex items-center space-x-1 md:space-x-2">
-                  <Heart className="fill-current" size={16} />
-                  <span className="font-semibold text-xs md:text-sm">{post._count.likes}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PostGridItem key={post.id} post={post} onPostClick={setSelectedPost} />
         ))}
       </div>
     ) : (
@@ -269,6 +359,8 @@ const ProfilePage = () => {
       </div>
     )
   );
+
+  const userImageUrl = buildAbsoluteUrl(user.foto);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
@@ -290,12 +382,12 @@ const ProfilePage = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8 text-center">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#3EB59D] to-[#2a9d87] p-1 mx-auto">
-              <img src={user.foto ? `${user.foto}?key=${cacheKey}` : `https://ui-avatars.com/api/?name=${user.name.replace(/\s/g, '+')}&background=random`} alt="Profile" className="w-full h-full rounded-full object-cover bg-white" />
+              <img src={userImageUrl || `https://ui-avatars.com/api/?name=${user.name.replace(/\s/g, '+')}&background=random`} alt="Profile" className="w-full h-full rounded-full object-cover bg-white" />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mt-4">{user.name}</h1>
             <div className="mt-6 mb-6">
                 <div className="font-bold text-xl md:text-2xl text-gray-800">{user._count.creations}</div>
-                <div className="text-gray-500 text-sm md:text-base">postingan</div>
+                <div className="text-gray-500 text-sm md:text-base">Postingan</div>
             </div>
             <div className="w-full max-w-xs mx-auto flex flex-col items-center space-y-3">
               <button onClick={() => setShowEditModal(true)} className="bg-[#3EB59D] text-white px-8 py-2 rounded-lg hover:bg-[#2a9d87] transition-all duration-300 transform hover:scale-105 text-sm md:text-base w-full cursor-pointer">
@@ -308,7 +400,6 @@ const ProfilePage = () => {
             </div>
         </div>
         <div className="bg-white rounded-t-2xl shadow-sm border border-gray-100">
-          
           <div className="relative border-b border-gray-200">
             <div className="flex">
                 <button onClick={() => setActiveTab('posts')} className={`flex-1 flex justify-center items-center space-x-2 py-4 font-medium transition-colors duration-300 cursor-pointer ${activeTab === 'posts' ? 'text-[#3EB59D]' : 'text-gray-500 hover:text-gray-700'}`}>

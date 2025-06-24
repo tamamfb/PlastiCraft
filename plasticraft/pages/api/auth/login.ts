@@ -9,6 +9,7 @@ const prisma = new PrismaClient();
 interface TokenPayload {
   id: number;
   email: string;
+  role: string;
 }
 
 export default async function handler(
@@ -39,6 +40,7 @@ export default async function handler(
   const payload: TokenPayload = {
     id: user.id,
     email: user.email,
+    role: user.role,
   };
 
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -56,6 +58,6 @@ export default async function handler(
 
   return res.status(200).json({
     message: 'Login berhasil',
-    user: { id: user.id, name: user.name, email: user.email },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
   });
 }

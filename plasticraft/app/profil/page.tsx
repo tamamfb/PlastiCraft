@@ -179,7 +179,6 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
             loading="lazy"
             onLoad={handleImageLoad}
             onError={handleImageError}
-            style={{ display: isLoading ? 'none' : 'block' }}
           />
         )
       )}

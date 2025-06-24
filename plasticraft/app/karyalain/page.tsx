@@ -23,7 +23,7 @@ const KaryaCard = ({ karya }: { karya: Karya }) => {
       <img src={imageUrl} alt={karya.judul} className="w-20 h-20 rounded-lg object-cover flex-shrink-0" />
       <div className="flex-grow">
         <h3 className="font-bold text-lg text-gray-800">{karya.judul}</h3>
-        <p className="text-gray-500 text-sm truncate">{karya.deskripsi}</p>
+        <p className="text-gray-500 text-sm line-clamp-2">{karya.deskripsi}</p>
         <button className="mt-2 inline-flex items-center text-sm font-semibold text-white bg-[#1B8380] py-1 px-3 rounded-full hover:bg-[#166966] cursor-pointer transition-colors">
           Lihat Karya
           <ChevronRightIcon className="w-4 h-4 ml-1" />

@@ -12,7 +12,6 @@ interface UserSession {
   role: 'ADMIN' | 'USER';
 }
 
-// Komponen Popup/Modal baru yang serbaguna
 const StatusPopup = ({
   type,
   message,
@@ -22,9 +21,21 @@ const StatusPopup = ({
   message: string;
   onClose: () => void;
 }) => {
-  const
- 
-iconContainerClass = {
+  const [isShowing, setIsShowing] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsShowing(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    setIsShowing(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const iconContainerClass = {
     success: 'bg-green-100',
     error: 'bg-red-100',
     info: 'bg-blue-100',
@@ -49,22 +60,35 @@ iconContainerClass = {
   }[type];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" aria-modal="true" role="dialog">
-      <div className="bg-white rounded-2xl w-full max-w-sm p-6 text-center shadow-xl transform transition-all">
-        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconContainerClass}`}>
-          <IconComponent className={`h-8 w-8 ${iconClass}`} />
+    <div 
+      className={`
+        fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 
+        bg-gray-900 bg-opacity-30 backdrop-blur-sm 
+        transition-opacity duration-300 ease-in-out
+        ${isShowing ? 'opacity-100' : 'opacity-0'}
+      `} 
+      aria-modal="true" 
+      role="dialog"
+    >
+      <div 
+        className={`bg-white rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl transform transition-all duration-300 ease-in-out ${
+          isShowing ? 'translate-y-0 opacity-100' : '-translate-y-12 opacity-0'
+        }`}
+      >
+        <div className={`mx-auto flex items-center justify-center h-16 w-16 rounded-full ${iconContainerClass}`}>
+          <IconComponent className={`h-10 w-10 ${iconClass}`} />
         </div>
-        <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">
+        <h3 className="text-xl leading-6 font-semibold text-gray-900 mt-5">
           {type === 'success' ? 'Berhasil' : type === 'error' ? 'Terjadi Kesalahan' : 'Informasi'}
         </h3>
-        <div className="mt-2">
-          <p className="text-sm text-gray-500">{message}</p>
+        <div className="mt-3">
+          <p className="text-base text-gray-600">{message}</p>
         </div>
-        <div className="mt-6">
+        <div className="mt-8">
           <button
             type="button"
-            onClick={onClose}
-            className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white ${buttonClass} focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm`}
+            onClick={handleClose}
+            className={`w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-3 text-base font-medium text-white ${buttonClass} focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm`}
           >
             Tutup
           </button>
@@ -80,7 +104,6 @@ export default function BagikanPage() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // --- State untuk Form ---
   const [uploadType, setUploadType] = useState('tutorial');
   const [title, setTitle] = useState('');
   const [categoryBahan, setCategoryBahan] = useState('');
@@ -94,7 +117,6 @@ export default function BagikanPage() {
   const [steps, setSteps] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- State untuk Popup/Modal ---
   const [popup, setPopup] = useState<{
     isOpen: boolean;
     type: 'success' | 'error' | 'info';
@@ -122,7 +144,6 @@ export default function BagikanPage() {
     fetchUserSession();
   }, [router]);
 
-  // --- Semua handler (handleImageChange, dll) tetap sama ---
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const selectedFile = event.target.files[0];
@@ -171,7 +192,6 @@ export default function BagikanPage() {
   const alatBahanHandlers = createDynamicInputHandler(alatBahan, setAlatBahan);
   const stepHandlers = createDynamicInputHandler(steps, setSteps);
 
-  // --- Fungsi handleSubmit yang diperbarui ---
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!imageFile || !title || !categoryBahan || !categoryProduk) {
@@ -237,7 +257,6 @@ export default function BagikanPage() {
   const activeTabClass = "w-[160px] bg-[#1B7865] text-white text-xl font-bold py-1 px-10 rounded-full shadow-md cursor-pointer";
   const inactiveTabClass = "w-[160px] bg-white text-[#1B7865] text-xl font-bold py-1 px-10 rounded-full border border-black cursor-pointer";
 
-  // --- Render function untuk form tetap sama ---
   const renderKaryaForm = () => (
     <div className='space-y-6'>
       <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center mb-6">
@@ -295,7 +314,7 @@ export default function BagikanPage() {
           </div>
         )}
       </div>
-       <div className="relative">
+      <div className="relative">
         <label htmlFor="categoryBahan-tutorial" className="text-gray-800 font-semibold">Kategori Bahan</label>
         <select id="categoryBahan-tutorial" value={categoryBahan} onChange={(e) => setCategoryBahan(e.target.value)} className="w-full bg-white border-b-2 border-gray-200 focus:border-[#1B8380] text-gray-900 pt-3 pb-2 px-1 outline-none appearance-none" required>
           <option value="" disabled>Pilih kategori bahan</option>
@@ -309,11 +328,11 @@ export default function BagikanPage() {
           <option value="1">Dekorasi</option><option value="2">Aksesoris</option><option value="3">Mainan</option><option value="4">Peralatan Rumah Tangga</option>
         </select>
       </div>
-       <div>
+      <div>
         <label htmlFor="title-tutorial" className="text-gray-800 font-semibold">Judul</label>
         <input type="text" id="title-tutorial" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-transparent border-b-2 border-gray-200 focus:border-[#1B8380] py-2 text-gray-700 outline-none transition-colors" placeholder="Tulis judul tutorialmu di sini" required/>
       </div>
-       <div>
+      <div>
         <label htmlFor="description-tutorial" className="text-gray-800 font-semibold">Deskripsi</label>
         <textarea id="description-tutorial" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-transparent border-b-2 border-gray-200 focus:border-[#1B8380] py-2 text-gray-700 outline-none transition-colors" placeholder="Tambahkan deskripsi singkat tutorial"></textarea>
       </div>
@@ -368,15 +387,8 @@ export default function BagikanPage() {
           </div>
         )}
 
-        <div className="overflow-hidden">
-          <div className={`flex transition-transform duration-500 ease-in-out ${user?.role === 'ADMIN' && uploadType === 'karya' ? '-translate-x-full' : 'translate-x-0'}`}>
-            <div className="w-full flex-shrink-0 pr-2">
-              {user?.role === 'ADMIN' ? renderTutorialForm() : renderKaryaForm()}
-            </div>
-            <div className="w-full flex-shrink-0 pl-2">
-              {renderKaryaForm()}
-            </div>
-          </div>
+        <div>
+          {uploadType === 'tutorial' ? renderTutorialForm() : renderKaryaForm()}
         </div>
 
         <div className="px-0 pt-8">

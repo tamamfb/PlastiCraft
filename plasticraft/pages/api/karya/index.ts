@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { getSession } from '../../../lib/session';
 
 const prisma = new PrismaClient();
 
@@ -13,22 +13,20 @@ export default async function handler(
   }
 
   const { categoryBahanId, categoryProdukId, sortBy } = req.query;
+  const session = await getSession(req);
 
-  // --- LOGIKA ORDER BY DENGAN OPSI BARU ---
   let orderBy: Prisma.CreationOrderByWithRelationInput;
-
   switch (sortBy) {
     case 'oldest':
       orderBy = { tanggal: 'asc' };
       break;
     case 'most_liked':
-      orderBy = { likes: { _count: 'desc' } }; // Urutkan berdasarkan jumlah like
+      orderBy = { likes: { _count: 'desc' } };
       break;
-    default: // 'newest' atau jika tidak ada parameter
+    default:
       orderBy = { tanggal: 'desc' };
       break;
   }
-  // --- AKHIR LOGIKA ORDER BY ---
 
   try {
     const creations = await prisma.creation.findMany({
@@ -42,7 +40,6 @@ export default async function handler(
         judul: true,
         deskripsi: true,
         gambar: true,
-        // Sertakan _count untuk likes agar bisa di-debug jika perlu
         userId: true,
         _count: {
           select: { likes: true }
@@ -51,7 +48,25 @@ export default async function handler(
       orderBy: orderBy,
     });
 
-    return res.status(200).json(creations);
+    if (!session) {
+      return res.status(200).json(creations);
+    }
+
+    const userId = session.id;
+    const userLikes = await prisma.like.findMany({ where: { userId: userId } });
+    const userBookmarks = await prisma.bookmark.findMany({ where: { userId: userId } });
+
+    const likedCreationIds = new Set(userLikes.map(like => like.creationId));
+    const bookmarkedCreationIds = new Set(userBookmarks.map(bm => bm.creationId));
+
+    const creationsWithStatus = creations.map(creation => ({
+      ...creation,
+      isLiked: likedCreationIds.has(creation.id),
+      isBookmarked: bookmarkedCreationIds.has(creation.id),
+    }));
+
+    return res.status(200).json(creationsWithStatus);
+
   } catch (error) {
     console.error('Failed to fetch creations:', error);
     return res.status(500).json({ error: 'Gagal mengambil data karya.' });

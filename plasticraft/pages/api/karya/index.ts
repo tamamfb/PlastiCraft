@@ -43,6 +43,7 @@ export default async function handler(
         deskripsi: true,
         gambar: true,
         // Sertakan _count untuk likes agar bisa di-debug jika perlu
+        userId: true,
         _count: {
           select: { likes: true }
         }

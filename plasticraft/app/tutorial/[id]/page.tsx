@@ -103,6 +103,7 @@ export default async function TutorialDetailPage({ params }: TutorialDetailPageP
       </div>
 
       <h2 className="text-center text-lg font-bold mb-4">{tutorial.judul}</h2>
+      <p className="text-center text-gray-600 mb-6">{tutorial.deskripsi}</p>
 
       {parsedAlatBahan.length > 0 && (
         <div className="mb-4">

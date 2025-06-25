@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import BottomNavbar from '@/app/components/BottomNavbar';
 import { CubeIcon, WrenchScrewdriverIcon, HeartIcon, GiftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Heart, Share, Bookmark } from 'lucide-react';
 
 // Tipe data untuk setiap item karya
 interface Karya {
@@ -12,10 +12,91 @@ interface Karya {
   judul: string;
   deskripsi: string;
   gambar: string;
+  userId: number;
+  _count: {
+    likes: number;
+  };
+  
 }
 
+interface UserProfile {
+  id: number;
+  name: string;
+  foto: string | null;
+}
+
+// Komponen Modal Detail Karya
+const buildAbsoluteUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${process.env.NEXT_PUBLIC_BASE_URL || ''}${url}`;
+};
+
+const PostDetailModal = ({ post, user, onClose }: { post: Karya, user: UserProfile | null, onClose: () => void }) => {
+  const [postImageError, setPostImageError] = useState(false);
+  const [postImageLoading, setPostImageLoading] = useState(true);
+  const postImageUrl = buildAbsoluteUrl(post.gambar);
+  const userImageUrl = buildAbsoluteUrl(user && user.foto ? user.foto : '');
+
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
+        <div className="flex-1 bg-black flex items-center justify-center relative">
+          {postImageLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            </div>
+          )}
+          {postImageError ? (
+            <div className="text-white text-center">
+              <div className="text-4xl mb-2">📷</div>
+              <p>Gambar tidak dapat dimuat</p>
+            </div>
+          ) : (
+            postImageUrl && (
+              <img
+                src={postImageUrl}
+                alt={post.judul}
+                className="max-w-full max-h-full object-contain"
+                onLoad={() => setPostImageLoading(false)}
+                onError={() => {
+                  setPostImageError(true);
+                  setPostImageLoading(false);
+                }}
+                style={{ display: postImageLoading ? 'none' : 'block' }}
+              />
+            )
+          )}
+        </div>
+        <div className="w-full md:w-80 flex flex-col">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <img src={userImageUrl || `https://ui-avatars.com/api/?name=${user?.name || 'User'}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+              <span className="font-semibold text-sm">{user?.name || 'User'}</span>
+            </div>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer">×</button>
+          </div>
+          <div className="flex-1 p-4 overflow-y-auto">
+            <h2 className="font-bold text-lg mb-2">{post.judul}</h2>
+            <p className="text-sm text-gray-800">{post.deskripsi}</p>
+          </div>
+          <div className="p-4 border-t border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-4">
+                <button className="hover:text-red-500 transition-colors cursor-pointer"><Heart size={24} /></button>
+                <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Share size={24} /></button>
+              </div>
+              <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Bookmark size={24} /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Komponen untuk setiap kartu karya
-const KaryaCard = ({ karya }: { karya: Karya }) => {
+const KaryaCard = ({ karya, onClick }: { karya: Karya, onClick?: () => void }) => {
   const imageUrl = karya.gambar.startsWith('http') ? karya.gambar : `${process.env.NEXT_PUBLIC_BASE_URL || ''}${karya.gambar}`;
 
   return (
@@ -24,7 +105,7 @@ const KaryaCard = ({ karya }: { karya: Karya }) => {
       <div className="flex-grow">
         <h3 className="font-bold text-lg text-gray-800">{karya.judul}</h3>
         <p className="text-gray-500 text-sm line-clamp-2">{karya.deskripsi}</p>
-        <button className="mt-2 inline-flex items-center text-sm font-semibold text-white bg-[#1B7865] py-1 px-3 rounded-full hover:bg-[#166966] cursor-pointer transition-colors">
+        <button onClick={onClick} className="mt-2 inline-flex items-center text-sm font-semibold text-white bg-[#1B7865] py-1 px-3 rounded-full hover:bg-[#166966] cursor-pointer transition-colors">
           Lihat Karya
           <ChevronRightIcon className="w-4 h-4 ml-1" />
         </button>
@@ -53,6 +134,9 @@ export default function KaryaLainPage() {
     { id: '4', nama: 'Dekorasi', icon: GiftIcon },
   ];
 
+  const [selectedPost, setSelectedPost] = useState<Karya | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+
   useEffect(() => {
     const fetchKarya = async () => {
       setLoading(true);
@@ -79,6 +163,18 @@ export default function KaryaLainPage() {
 
     fetchKarya();
   }, [selectedBahan, selectedProduk, sortBy]);
+
+  const handleShowDetail = async (karya: Karya) => {
+    try {
+      const response = await fetch(`/api/users/public-profile?userId=${karya.userId}`);
+      if (!response.ok) throw new Error('Gagal memuat data user');
+      const user: UserProfile = await response.json();
+      setSelectedUser(user);
+    } catch (err: any) {
+      setSelectedUser(null);
+    }
+    setSelectedPost(karya);
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans pb-24">
@@ -145,11 +241,14 @@ export default function KaryaLainPage() {
           ) : karyaList.length > 0 ? (
             <div className="space-y-4">
               {karyaList.map(karya => (
-                <KaryaCard key={karya.id} karya={karya} />
+                <KaryaCard key={karya.id} karya={karya} onClick={() => handleShowDetail(karya)} />
               ))}
             </div>
           ) : (
             <p className="text-center text-gray-500 py-8">Tidak ada karya yang ditemukan.</p>
+          )}
+          {selectedPost && (
+            <PostDetailModal post={selectedPost} user={selectedUser} onClose={() => setSelectedPost(null)} />
           )}
         </div>
       </main>

@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { getSession } from '../../../lib/session';
 
 const prisma = new PrismaClient();
 
@@ -9,36 +9,28 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== 'GET') {
-    return res.status(405).end();
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const token = req.cookies['auth-token'];
-  if (!token) {
-    return res.status(401).json({ error: 'Akses ditolak' });
+  const session = await getSession(req);
+  if (!session?.id) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number };
-    const userId = decoded.id;
-
+    const userId = session.id;
     const bookmarks = await prisma.bookmark.findMany({
-      // TAMBAHKAN FILTER BERDASARKAN TIPE KREASI YANG TERHUBUNG
       where: { 
         userId: userId,
         creation: {
           type: 'KARYA'
         }
       },
-      select: {
+      include: {
         creation: {
-          select: {
-            id: true,
-            gambar: true,
-            judul: true,
+          include: {
             _count: {
-              select: {
-                likes: true,
-              },
+              select: { likes: true },
             },
           },
         },
@@ -48,11 +40,19 @@ export default async function handler(
       },
     });
 
-    const bookmarkedPosts = bookmarks.map(bookmark => bookmark.creation);
+    const bookmarkedCreations = bookmarks.map(bm => bm.creation);
 
-    return res.status(200).json(bookmarkedPosts);
+    const userLikes = await prisma.like.findMany({ where: { userId: userId } });
+    const likedCreationIds = new Set(userLikes.map(like => like.creationId));
+    
+    const bookmarksWithStatus = bookmarkedCreations.map(creation => ({
+      ...creation,
+      isLiked: likedCreationIds.has(creation.id),
+      isBookmarked: true,
+    }));
 
+    res.status(200).json(bookmarksWithStatus);
   } catch (error) {
-    return res.status(401).json({ error: 'Token tidak valid' });
+    res.status(500).json({ error: 'Gagal mengambil data bookmark' });
   }
 }

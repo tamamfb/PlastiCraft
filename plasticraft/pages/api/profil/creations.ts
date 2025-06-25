@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { getSession } from '../../../lib/session';
 
 const prisma = new PrismaClient();
 
@@ -9,32 +9,24 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== 'GET') {
-    return res.status(405).end();
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const token = req.cookies['auth-token'];
-  if (!token) {
-    return res.status(401).json({ error: 'Akses ditolak' });
+  const session = await getSession(req);
+  if (!session?.id) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number };
-    const userId = decoded.id;
-
-    const creations = await prisma.creation.findMany({
-      // TAMBAHKAN FILTER UNTUK TIPE KARYA DI SINI
+    const userId = session.id;
+    const userCreations = await prisma.creation.findMany({
       where: { 
         userId: userId,
-        type: 'KARYA' 
+        type: 'KARYA'
       },
-      select: {
-        id: true,
-        gambar: true,
-        judul: true,
+      include: {
         _count: {
-          select: {
-            likes: true,
-          },
+          select: { likes: true },
         },
       },
       orderBy: {
@@ -42,9 +34,20 @@ export default async function handler(
       },
     });
 
-    return res.status(200).json(creations);
+    const userLikes = await prisma.like.findMany({ where: { userId: userId } });
+    const userBookmarks = await prisma.bookmark.findMany({ where: { userId: userId } });
 
+    const likedCreationIds = new Set(userLikes.map(like => like.creationId));
+    const bookmarkedCreationIds = new Set(userBookmarks.map(bm => bm.creationId));
+
+    const creationsWithStatus = userCreations.map(creation => ({
+      ...creation,
+      isLiked: likedCreationIds.has(creation.id),
+      isBookmarked: bookmarkedCreationIds.has(creation.id),
+    }));
+
+    res.status(200).json(creationsWithStatus);
   } catch (error) {
-    return res.status(401).json({ error: 'Token tidak valid' });
+    res.status(500).json({ error: 'Gagal mengambil data kreasi' });
   }
 }

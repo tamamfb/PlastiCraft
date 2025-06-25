@@ -20,9 +20,12 @@ interface Post {
   id: number;
   gambar: string;
   judul: string;
+  deskripsi: string;
   _count: {
     likes: number;
   };
+  isLiked?: boolean;
+  isBookmarked?: boolean;
 }
 
 const buildAbsoluteUrl = (path: string | null | undefined): string | null => {
@@ -143,15 +146,6 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
     setIsLoading(true);
   }, [post.gambar]);
 
-  const handleImageLoad = () => {
-    setIsLoading(false);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-    setIsLoading(false);
-  };
-
   return (
     <div 
       onClick={() => onPostClick(post)} 
@@ -164,12 +158,7 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
       )}
       
       {imageError ? (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-          <div className="text-center">
-            <div className="text-gray-400 mb-2">📷</div>
-            <p className="text-xs text-gray-500">Gambar tidak dapat dimuat</p>
-          </div>
-        </div>
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-center"><p className="text-xs text-gray-500">Error</p></div>
       ) : (
         imageUrl && (
           <img 
@@ -177,17 +166,17 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
             alt={post.judul} 
             className="w-full h-full object-cover" 
             loading="lazy"
-            onLoad={handleImageLoad}
-            onError={handleImageError}
+            onLoad={() => setIsLoading(false)}
+            onError={() => setIsLoading(false)}
           />
         )
       )}
       
       <div className="absolute inset-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
-        <div className="flex items-center space-x-3 md:space-x-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex items-center space-x-1 md:space-x-2">
+        <div className="flex items-center space-x-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="flex items-center space-x-2">
             <Heart className="fill-current" size={16} />
-            <span className="font-semibold text-xs md:text-sm">{post._count.likes}</span>
+            <span className="font-semibold text-sm">{post._count.likes}</span>
           </div>
         </div>
       </div>
@@ -195,13 +184,79 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
   );
 };
 
+const PostDetailModal = ({ post, user, onClose, onLike, onBookmark }: { post: Post, user: UserProfile, onClose: () => void, onLike: () => void, onBookmark: () => void }) => {
+    const [postImageError, setPostImageError] = useState(false);
+    const [postImageLoading, setPostImageLoading] = useState(true);
+    const postImageUrl = buildAbsoluteUrl(post.gambar);
+    const userImageUrl = buildAbsoluteUrl(user.foto);
+  
+    return (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
+              <div className="flex-1 bg-black flex items-center justify-center relative">
+                {postImageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  </div>
+                )}
+                {postImageError ? (
+                  <div className="text-white text-center"><p>Gambar tidak dapat dimuat</p></div>
+                ) : (
+                  postImageUrl && (
+                    <img 
+                      src={postImageUrl} 
+                      alt={post.judul} 
+                      className="max-w-full max-h-full object-contain"
+                      onLoad={() => setPostImageLoading(false)}
+                      onError={() => {
+                        setPostImageError(true);
+                        setPostImageLoading(false);
+                      }}
+                      style={{ display: postImageLoading ? 'none' : 'block' }}
+                    />
+                  )
+                )}
+              </div>
+              <div className="w-full md:w-80 flex flex-col">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <img src={userImageUrl || `https://ui-avatars.com/api/?name=${user.name}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                    <span className="font-semibold text-sm">{user.name}</span>
+                  </div>
+                  <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer">×</button>
+              </div>
+              <div className="flex-1 p-4 overflow-y-auto space-y-2">
+                  <p className="font-bold text-gray-800">{post.judul}</p>
+                  <p className="text-sm text-gray-600">{post.deskripsi}</p>
+              </div>
+              <div className="p-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-4">
+                          <button onClick={onLike} className="flex items-center space-x-1.5 group cursor-pointer">
+                              <Heart size={24} className={`group-hover:text-red-500 transition-colors ${post.isLiked ? 'text-red-500 fill-current' : 'text-gray-500'}`} />
+                          </button>
+                      </div>
+                      <button onClick={onBookmark} className="group cursor-pointer">
+                          <Bookmark size={24} className={`group-hover:text-[#3EB59D] transition-colors ${post.isBookmarked ? 'text-[#3EB59D] fill-current' : 'text-gray-500'}`} />
+                      </button>
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-semibold mb-1">{post._count.likes} suka</p>
+                  </div>
+              </div>
+              </div>
+          </div>
+        </div>
+    );
+}
+
 const ProfilePage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('posts');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
@@ -231,10 +286,10 @@ const ProfilePage = () => {
       setBookmarkedPosts(bookmarksData);
 
     } catch (err: any) {
-      if (err.message === 'Gagal memuat data pengguna') {
-         router.push('/login');
+      if (err.message.includes('Gagal memuat data pengguna')) {
+          router.push('/login');
       } else {
-         setError(err.message);
+          setError(err.message);
       }
     } finally {
       setLoading(false);
@@ -243,7 +298,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [router]);
+  }, []);
 
   const handleUpdateSuccess = (updatedUserData: Partial<UserProfile>) => {
     setUser(prevUser => {
@@ -257,9 +312,7 @@ const ProfilePage = () => {
       setIsLoggingOut(true);
       try {
           const response = await fetch('/api/auth/logout', { method: 'POST' });
-          if (!response.ok) {
-              throw new Error('Logout failed');
-          }
+          if (!response.ok) throw new Error('Logout failed');
           router.push('/login');
       } catch (error) {
           console.error(error);
@@ -268,90 +321,88 @@ const ProfilePage = () => {
       }
   };
 
+  const handleToggleLike = (postId: number) => {
+    const allPosts = [...posts, ...bookmarkedPosts];
+    const originalPost = allPosts.find(p => p.id === postId);
+    if (!originalPost) return;
+
+    const optimisticUpdate = (list: Post[]) => list.map(p => {
+        if (p.id === postId) {
+            const isNowLiked = !p.isLiked;
+            return {
+                ...p,
+                isLiked: isNowLiked,
+                _count: { likes: isNowLiked ? p._count.likes + 1 : p._count.likes - 1 }
+            };
+        }
+        return p;
+    });
+
+    const originalPosts = [...posts];
+    const originalBookmarkedPosts = [...bookmarkedPosts];
+
+    setPosts(optimisticUpdate(posts));
+    setBookmarkedPosts(optimisticUpdate(bookmarkedPosts));
+
+    fetch(`/api/karya/${postId}/like`, {
+      method: originalPost.isLiked ? 'DELETE' : 'POST',
+    }).catch(err => {
+      console.error("Gagal update like:", err);
+      setPosts(originalPosts);
+      setBookmarkedPosts(originalBookmarkedPosts);
+    });
+  };
+
+  const handleToggleBookmark = (postId: number) => {
+    const originalPosts = [...posts];
+    const originalBookmarkedPosts = [...bookmarkedPosts];
+
+    const targetPost = [...originalPosts, ...originalBookmarkedPosts].find(p => p.id === postId);
+    if (!targetPost) return;
+
+    const isNowBookmarked = !targetPost.isBookmarked;
+
+    setPosts(posts.map(p => p.id === postId ? { ...p, isBookmarked: isNowBookmarked } : p));
+    if (isNowBookmarked) {
+        if (!bookmarkedPosts.some(p => p.id === postId)) {
+            const postToAdd = posts.find(p => p.id === postId);
+            if(postToAdd) setBookmarkedPosts(prev => [{...postToAdd, isBookmarked: true }, ...prev]);
+        }
+    } else {
+        setBookmarkedPosts(bookmarkedPosts.filter(p => p.id !== postId));
+    }
+
+    fetch(`/api/karya/${postId}/bookmark`, {
+      method: targetPost.isBookmarked ? 'DELETE' : 'POST',
+    }).catch(err => {
+      console.error("Gagal update bookmark:", err);
+      setPosts(originalPosts);
+      setBookmarkedPosts(originalBookmarkedPosts);
+    });
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-screen bg-gray-50"><Loader2 className="w-10 h-10 text-[#3EB59D] animate-spin" /></div>;
   if (error) return <div className="flex items-center justify-center min-h-screen text-red-500">{error}</div>;
-  if (!user) return <div className="flex items-center justify-center min-h-screen">User tidak ditemukan.</div>;
+  if (!user) return <div className="flex items-center justify-center min-h-screen">Mengarahkan ke halaman login...</div>;
 
-  const PostDetailModal = ({ post }: { post: Post }) => {
-    const [postImageError, setPostImageError] = useState(false);
-    const [postImageLoading, setPostImageLoading] = useState(true);
-    const postImageUrl = buildAbsoluteUrl(post.gambar);
-    const userImageUrl = buildAbsoluteUrl(user.foto);
+  const postToShowInModal = [...posts, ...bookmarkedPosts].find(p => p.id === selectedPostId);
 
-    return (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
-              <div className="flex-1 bg-black flex items-center justify-center relative">
-                {postImageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 text-white animate-spin" />
-                  </div>
-                )}
-                
-                {postImageError ? (
-                  <div className="text-white text-center">
-                    <div className="text-4xl mb-2">📷</div>
-                    <p>Gambar tidak dapat dimuat</p>
-                  </div>
-                ) : (
-                  postImageUrl && (
-                    <img 
-                      src={postImageUrl} 
-                      alt={post.judul} 
-                      className="max-w-full max-h-full object-contain"
-                      onLoad={() => setPostImageLoading(false)}
-                      onError={() => {
-                        setPostImageError(true);
-                        setPostImageLoading(false);
-                      }}
-                      style={{ display: postImageLoading ? 'none' : 'block' }}
-                    />
-                  )
-                )}
-              </div>
-              <div className="w-full md:w-80 flex flex-col">
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                  <img src={userImageUrl || `https://ui-avatars.com/api/?name=${user.name}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-                  <span className="font-semibold text-sm">{user.name}</span>
-                  </div>
-                  <button onClick={() => setSelectedPost(null)} className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer">×</button>
-              </div>
-              <div className="flex-1 p-4 overflow-y-auto">
-                  <p className="text-sm text-gray-800">{post.judul}</p>
-              </div>
-              <div className="p-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-4">
-                      <button className="hover:text-red-500 transition-colors cursor-pointer"><Heart size={24} /></button>
-                      <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Share size={24} /></button>
-                  </div>
-                  <button className="hover:text-[#3EB59D] transition-colors cursor-pointer"><Bookmark size={24} /></button>
-                  </div>
-                  <div className="text-sm">
-                  <p className="font-semibold mb-1">{post._count.likes} suka</p>
-                  </div>
-              </div>
-              </div>
-          </div>
-        </div>
-    );
-  }
-  
   const PostGrid = ({ postsToDisplay }: { postsToDisplay: Post[] }) => (
     postsToDisplay.length > 0 ? (
       <div className="grid grid-cols-3 gap-1 md:gap-6">
         {postsToDisplay.map((post) => (
-          <PostGridItem key={post.id} post={post} onPostClick={setSelectedPost} />
+          <PostGridItem key={post.id} post={post} onPostClick={() => setSelectedPostId(post.id)} />
         ))}
       </div>
     ) : (
       <div className="text-center py-12 md:py-16">
-        <div className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 bg-gradient-to-br from-[#3EB59D] to-[#2a9d87] rounded-full flex items-center justify-center">
-          {activeTab === 'posts' ? <Grid size={24} className="text-white md:w-8 md:h-8" /> : <Bookmark size={24} className="text-white md:w-8 md:h-8" />}
+        <div className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+            <div className="w-14 h-14 md:w-20 md:h-20 border-2 border-gray-300 rounded-full flex items-center justify-center">
+                {activeTab === 'posts' ? <Grid size={24} className="text-gray-400 md:w-8 md:h-8" /> : <Bookmark size={24} className="text-gray-400 md:w-8 md:h-8" />}
+            </div>
         </div>
         <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-2">
-          {activeTab === 'posts' ? 'Belum Ada Postingan' : 'Anda belum menyimpan kreasi apa pun.'}
+          {activeTab === 'posts' ? 'Belum Ada Postingan' : 'Anda belum menyimpan kreasi'}
         </h3>
         <p className="text-gray-500 max-w-md mx-auto leading-relaxed text-sm md:text-base px-4 md:px-0">
           {activeTab === 'posts' ? 'Anda belum membagikan kreasi apa pun.' : 'Semua kreasi yang Anda simpan akan muncul di sini.'}
@@ -365,19 +416,13 @@ const ProfilePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {showEditModal && <EditProfileModal user={user} onClose={() => setShowEditModal(false)} onUpdateSuccess={handleUpdateSuccess} />}
-      {selectedPost && <PostDetailModal post={selectedPost} />}
-      {showLogoutModal && (
-          <LogoutConfirmationModal 
-              onConfirm={handleLogout} 
-              onCancel={() => setShowLogoutModal(false)} 
-              isLoggingOut={isLoggingOut} 
-          />
-      )}
+      {postToShowInModal && <PostDetailModal post={postToShowInModal} user={user} onClose={() => setSelectedPostId(null)} onLike={() => handleToggleLike(postToShowInModal.id)} onBookmark={() => handleToggleBookmark(postToShowInModal.id)} />}
+      {showLogoutModal && <LogoutConfirmationModal onConfirm={handleLogout} onCancel={() => setShowLogoutModal(false)} isLoggingOut={isLoggingOut} />}
       
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-      <header className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between top-0 z-10">
-        <h1 className="text-2xl font-bold text-gray-800">Profil {user.name}</h1>
-      </header>
+        <header className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-800 truncate">{user.name}</h1>
+        </header>
       </div>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-8 text-center">
@@ -408,7 +453,7 @@ const ProfilePage = () => {
                 </button>
                 <button onClick={() => setActiveTab('bookmarks')} className={`flex-1 flex justify-center items-center space-x-2 py-4 font-medium transition-colors duration-300 cursor-pointer ${activeTab === 'bookmarks' ? 'text-[#3EB59D]' : 'text-gray-500 hover:text-gray-700'}`}>
                     <Bookmark size={18} />
-                    <span className="text-sm md:text-base">BOOKMARK</span>
+                    <span className="text-sm md:text-base">DISIMPAN</span>
                 </button>
             </div>
             <div

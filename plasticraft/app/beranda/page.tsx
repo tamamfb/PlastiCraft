@@ -158,7 +158,7 @@ export default function Beranda() {
               const imageUrl = karya.gambar.startsWith('http') ? karya.gambar : `${process.env.NEXT_PUBLIC_BASE_URL || ''}${karya.gambar}`;
               return (
                 <SwiperSlide key={karya.id}>
-                  <Link href={`/karya/${karya.id}`}>
+                  {/* <Link href={`/karya/${karya.id}`}> */}
                     <div className="cursor-pointer group relative w-full h-40">
                       <Image
                         src={imageUrl}
@@ -168,7 +168,7 @@ export default function Beranda() {
                         className="rounded-lg object-cover shadow-md transform group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-                  </Link>
+                  {/* </Link> */}
                 </SwiperSlide>
               );
             })}

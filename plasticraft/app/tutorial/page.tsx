@@ -38,8 +38,10 @@ export default async function TutorialPage() {
   return (
     // Tambahkan pb-24 di sini
     <div className="flex flex-col min-h-screen bg-white pb-24">
+      <header className="bg-white shadow-sm sticky top-0 z-10 p-4">
+        <h1 className="text-2xl font-bold text-gray-800">Tutorial</h1>
+      </header>
       <div className="p-4">
-        <h1 className="text-xl font-semibold mb-4">Tutorial</h1>
         <TutorialClientPage initialTutorials={formattedTutorials} />
       </div>
 

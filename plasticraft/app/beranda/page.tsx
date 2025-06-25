@@ -104,12 +104,16 @@ export default function Beranda() {
   }, []);
 
   return (
+    
     <div className="bg-gray-50 min-h-screen pb-24">
+      <header className="bg-white shadow-sm sticky top-0 z-15 p-4">
+        <h1 className="text-2xl font-bold text-black">PlastiCraft</h1>
+      </header>
       {/* Bagian 1: Banner */}
       <div className="relative mx-4 mt-4 mb-8 rounded-lg overflow-hidden">
         <Image src={bg} alt="Background" className="w-full h-64 object-cover" priority />
         <div className="absolute inset-0 bg-black/70"></div>
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center text-white px-4">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center text-white px-4">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold mb-2">Kreasikan Sampah Plastikmu</h1>
           <p className="text-sm sm:text-base md:text-lg mb-8">Hijaukan Bumi, kurangi sampah plastik</p>
           <Link href="/tutorial">

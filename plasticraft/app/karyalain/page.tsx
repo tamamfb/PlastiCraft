@@ -24,7 +24,7 @@ const KaryaCard = ({ karya }: { karya: Karya }) => {
       <div className="flex-grow">
         <h3 className="font-bold text-lg text-gray-800">{karya.judul}</h3>
         <p className="text-gray-500 text-sm line-clamp-2">{karya.deskripsi}</p>
-        <button className="mt-2 inline-flex items-center text-sm font-semibold text-white bg-[#1B8380] py-1 px-3 rounded-full hover:bg-[#166966] cursor-pointer transition-colors">
+        <button className="mt-2 inline-flex items-center text-sm font-semibold text-white bg-[#1B7865] py-1 px-3 rounded-full hover:bg-[#166966] cursor-pointer transition-colors">
           Lihat Karya
           <ChevronRightIcon className="w-4 h-4 ml-1" />
         </button>
@@ -83,16 +83,16 @@ export default function KaryaLainPage() {
   return (
     <div className="bg-gray-50 min-h-screen font-sans pb-24">
       <header className="bg-white shadow-sm sticky top-0 z-10 p-4">
-        <h1 className="text-2xl font-bold text-center text-gray-800">Karya Lain</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Karya Lain</h1>
       </header>
 
       <main className="p-4">
-        <div className="bg-[#1B8380] text-white rounded-2xl p-4 mb-6">
-          <h2 className="text-lg font-bold mb-2">Pilih Bahan Daur Ulangmu</h2>
+        <div className="bg-[#3EB59D] text-white rounded-2xl p-4 pb-6 mb-6 text-center">
+          <h2 className="text-xl font-bold mb-2">Pilih Bahan Daur Ulangmu</h2>
           <select
             value={selectedBahan}
             onChange={(e) => setSelectedBahan(e.target.value)}
-            className="w-full bg-white text-gray-800 rounded-lg p-3 appearance-none focus:outline-none focus:ring-2 focus:ring-white cursor-pointer"
+            className="w-full bg-white text-gray-800 text-center rounded-lg p-1.5 appearance-none focus:outline-none focus:ring-2 focus:ring-white cursor-pointer"
           >
             <option value="">Semua Bahan</option>
             <option value="1">Botol Plastik</option>

@@ -234,8 +234,8 @@ export default function BagikanPage() {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 text-[#1B8380] animate-spin" /></div>;
   }
   
-  const activeTabClass = "bg-[#1B8380] text-white font-semibold py-3 px-10 rounded-full shadow-md cursor-pointer";
-  const inactiveTabClass = "bg-white text-gray-700 font-semibold py-3 px-10 rounded-full border border-gray-300 cursor-pointer";
+  const activeTabClass = "w-[160px] bg-[#1B7865] text-white text-xl font-bold py-1 px-10 rounded-full shadow-md cursor-pointer";
+  const inactiveTabClass = "w-[160px] bg-white text-[#1B7865] text-xl font-bold py-1 px-10 rounded-full border border-black cursor-pointer";
 
   // --- Render function untuk form tetap sama ---
   const renderKaryaForm = () => (
@@ -362,7 +362,7 @@ export default function BagikanPage() {
       
       <form onSubmit={handleSubmit} className="p-6">
         {user?.role === 'ADMIN' && (
-          <div className="flex justify-center space-x-2 mb-6">
+          <div className="flex justify-center space-x-7 mb-6">
             <button type="button" onClick={() => setUploadType('tutorial')} className={uploadType === 'tutorial' ? activeTabClass : inactiveTabClass}>Tutorial</button>
             <button type="button" onClick={() => setUploadType('karya')} className={uploadType === 'karya' ? activeTabClass : inactiveTabClass}>Karya</button>
           </div>
@@ -380,7 +380,7 @@ export default function BagikanPage() {
         </div>
 
         <div className="px-0 pt-8">
-          <button type="submit" disabled={isSubmitting} className="cursor-pointer w-full bg-[#1B7865] text-white font-bold py-4 rounded-full text-lg shadow-lg hover:bg-[#166966] transition-all duration-300 disabled:opacity-50 flex items-center justify-center">
+          <button type="submit" disabled={isSubmitting} className="cursor-pointer w-full bg-[#1B7865] text-white font-bold py-2 rounded-full text-lg shadow-lg hover:bg-[#166966] transition-all duration-300 disabled:opacity-50 flex items-center justify-center">
             {isSubmitting ? <Loader2 className="animate-spin" /> : 'Unggah'}
           </button>
         </div>

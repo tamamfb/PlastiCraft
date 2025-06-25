@@ -29,6 +29,13 @@ export default async function handler(
       include: {
         creation: {
           include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                foto: true
+              }
+            },
             _count: {
               select: { likes: true },
             },
@@ -53,6 +60,8 @@ export default async function handler(
 
     res.status(200).json(bookmarksWithStatus);
   } catch (error) {
+    // Menambahkan logging error untuk mempermudah debugging jika ada masalah lain
+    console.error("Error fetching bookmarks:", error);
     res.status(500).json({ error: 'Gagal mengambil data bookmark' });
   }
 }

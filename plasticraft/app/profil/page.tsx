@@ -16,6 +16,7 @@ interface UserProfile {
   };
 }
 
+// LANGKAH 1: Perbarui tipe data Post
 interface Post {
   id: number;
   gambar: string;
@@ -26,6 +27,11 @@ interface Post {
   };
   isLiked?: boolean;
   isBookmarked?: boolean;
+  user?: { // Tambahkan properti 'user' di sini
+    id: number;
+    name: string;
+    foto: string | null;
+  };
 }
 
 const buildAbsoluteUrl = (path: string | null | undefined): string | null => {
@@ -167,16 +173,19 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
             className="w-full h-full object-cover" 
             loading="lazy"
             onLoad={() => setIsLoading(false)}
-            onError={() => setIsLoading(false)}
+            onError={() => {
+                setImageError(true);
+                setIsLoading(false);
+            }}
           />
         )
       )}
       
-      <div className="absolute inset-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
+      <div className="absolute inset-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
         <div className="flex items-center space-x-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex items-center space-x-2">
-            <Heart className="fill-current" size={16} />
-            <span className="font-semibold text-sm">{post._count.likes}</span>
+          <div className="flex items-center space-x-1">
+            <Heart className="fill-current" size={18} />
+            <span className="font-bold text-sm">{post._count.likes}</span>
           </div>
         </div>
       </div>
@@ -184,12 +193,18 @@ const PostGridItem = ({ post, onPostClick }: { post: Post, onPostClick: (post: P
   );
 };
 
-const PostDetailModal = ({ post, user, onClose, onLike, onBookmark }: { post: Post, user: UserProfile, onClose: () => void, onLike: () => void, onBookmark: () => void }) => {
+// LANGKAH 2: Perbaiki komponen PostDetailModal
+const PostDetailModal = ({ post, loggedInUser, onClose, onLike, onBookmark }: { post: Post, loggedInUser: UserProfile, onClose: () => void, onLike: () => void, onBookmark: () => void }) => {
     const [postImageError, setPostImageError] = useState(false);
     const [postImageLoading, setPostImageLoading] = useState(true);
+
+    // Tentukan profil siapa yang akan ditampilkan
+    // Jika post punya data 'user' (dari bookmark), gunakan itu. Jika tidak, gunakan 'loggedInUser'.
+    const author = post.user || loggedInUser;
+
     const postImageUrl = buildAbsoluteUrl(post.gambar);
-    const userImageUrl = buildAbsoluteUrl(user.foto);
-  
+    const authorImageUrl = buildAbsoluteUrl(author.foto);
+
     return (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-lg flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
@@ -220,8 +235,9 @@ const PostDetailModal = ({ post, user, onClose, onLike, onBookmark }: { post: Po
               <div className="w-full md:w-80 flex flex-col">
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <img src={userImageUrl || `https://ui-avatars.com/api/?name=${user.name}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-                    <span className="font-semibold text-sm">{user.name}</span>
+                    {/* Gunakan data 'author' yang sudah ditentukan */}
+                    <img src={authorImageUrl || `https://ui-avatars.com/api/?name=${author.name}`} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                    <span className="font-semibold text-sm">{author.name}</span>
                   </div>
                   <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl cursor-pointer">×</button>
               </div>
@@ -241,7 +257,7 @@ const PostDetailModal = ({ post, user, onClose, onLike, onBookmark }: { post: Po
                       </button>
                   </div>
                   <div className="text-sm">
-                    <p className="font-semibold mb-1">{post._count.likes} suka</p>
+                      <p className="font-semibold mb-1">{post._count.likes} suka</p>
                   </div>
               </div>
               </div>
@@ -273,6 +289,11 @@ const ProfilePage = () => {
         fetch('/api/profil/bookmarks'),
       ]);
 
+      if (userResponse.status === 401) {
+          router.push('/login');
+          return;
+      }
+
       if (!userResponse.ok) throw new Error('Gagal memuat data pengguna');
       const userData: UserProfile = await userResponse.json();
       setUser(userData);
@@ -286,11 +307,7 @@ const ProfilePage = () => {
       setBookmarkedPosts(bookmarksData);
 
     } catch (err: any) {
-      if (err.message.includes('Gagal memuat data pengguna')) {
-          router.push('/login');
-      } else {
-          setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -303,7 +320,7 @@ const ProfilePage = () => {
   const handleUpdateSuccess = (updatedUserData: Partial<UserProfile>) => {
     setUser(prevUser => {
       if (!prevUser) return null;
-      fetchData(); 
+      // Cukup update state, tidak perlu fetch ulang semua data
       return { ...prevUser, ...updatedUserData };
     });
   };
@@ -328,12 +345,12 @@ const ProfilePage = () => {
 
     const optimisticUpdate = (list: Post[]) => list.map(p => {
         if (p.id === postId) {
-            const isNowLiked = !p.isLiked;
-            return {
-                ...p,
-                isLiked: isNowLiked,
-                _count: { likes: isNowLiked ? p._count.likes + 1 : p._count.likes - 1 }
-            };
+          const isNowLiked = !p.isLiked;
+          return {
+              ...p,
+              isLiked: isNowLiked,
+              _count: { likes: isNowLiked ? p._count.likes + 1 : p._count.likes - 1 }
+          };
         }
         return p;
     });
@@ -365,7 +382,7 @@ const ProfilePage = () => {
     setPosts(posts.map(p => p.id === postId ? { ...p, isBookmarked: isNowBookmarked } : p));
     if (isNowBookmarked) {
         if (!bookmarkedPosts.some(p => p.id === postId)) {
-            const postToAdd = posts.find(p => p.id === postId);
+            const postToAdd = posts.find(p => p.id === postId) || bookmarkedPosts.find(p => p.id === postId);
             if(postToAdd) setBookmarkedPosts(prev => [{...postToAdd, isBookmarked: true }, ...prev]);
         }
     } else {
@@ -414,9 +431,10 @@ const ProfilePage = () => {
   const userImageUrl = buildAbsoluteUrl(user.foto);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      {showEditModal && <EditProfileModal user={user} onClose={() => setShowEditModal(false)} onUpdateSuccess={handleUpdateSuccess} />}
-      {postToShowInModal && <PostDetailModal post={postToShowInModal} user={user} onClose={() => setSelectedPostId(null)} onLike={() => handleToggleLike(postToShowInModal.id)} onBookmark={() => handleToggleBookmark(postToShowInModal.id)} />}
+    <div className="min-h-screen bg-gray-50">
+      {showEditModal && user && <EditProfileModal user={user} onClose={() => setShowEditModal(false)} onUpdateSuccess={handleUpdateSuccess} />}
+      {/* LANGKAH 3: Sesuaikan pemanggilan modal */}
+      {postToShowInModal && user && <PostDetailModal post={postToShowInModal} loggedInUser={user} onClose={() => setSelectedPostId(null)} onLike={() => handleToggleLike(postToShowInModal.id)} onBookmark={() => handleToggleBookmark(postToShowInModal.id)} />}
       {showLogoutModal && <LogoutConfirmationModal onConfirm={handleLogout} onCancel={() => setShowLogoutModal(false)} isLoggingOut={isLoggingOut} />}
       
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
